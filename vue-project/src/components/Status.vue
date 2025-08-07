@@ -1,6 +1,13 @@
 <template>
   <div>
     <h2>Status em tempo real</h2>
+
+    <label>Selecionar caça:</label>
+    <select v-model="selectedFlight">
+      <option value="flight-1">Flight 1</option>
+      <option value="flight-2">Flight 2</option>
+    </select>
+
     <div v-if="!connected">🔴 Desconectado</div>
     <div v-else>🟢 Conectado</div>
 
@@ -14,7 +21,11 @@
 </template>
 
 <script setup>
-import { reactive, ref, onMounted, onUnmounted } from 'vue'
+import { ref, reactive, watch, onMounted, onUnmounted } from 'vue'
+import { io } from 'socket.io-client'
+
+const selectedFlight = ref('flight-1')
+const connected = ref(false)
 
 const data = reactive({
   altitude: 0,
@@ -23,30 +34,45 @@ const data = reactive({
   temperature: 0,
 })
 
-const connected = ref(false)
-let socket
+const socket = io('http://localhost:3000')
+
+let currentListener = ''
+
+const listenToFlight = (flightId) => {
+  // remove listener anterior
+  if (currentListener) {
+    socket.off(currentListener)
+  }
+
+  const eventName = `flightData:${flightId}`
+  currentListener = eventName
+
+  socket.on(eventName, (incoming) => {
+    Object.assign(data, incoming)
+  })
+}
 
 onMounted(() => {
-  socket = new WebSocket('ws://localhost:3000') // ou wss:// se for seguro
-
-  socket.onopen = () => {
+  socket.on('connect', () => {
     connected.value = true
-    console.log('WebSocket conectado')
-  }
+    console.log('🟢 Conectado ao servidor')
+    listenToFlight(selectedFlight.value)
+  })
 
-  socket.onmessage = (event) => {
-    const incoming = JSON.parse(event.data)
-    // Exemplo: { altitude: 5000, speed: 800, heading: 270, temperature: 35 }
-    Object.assign(data, incoming)
-  }
-
-  socket.onclose = () => {
+  socket.on('disconnect', () => {
     connected.value = false
-    console.log('WebSocket desconectado')
+    console.log('🔴 Desconectado')
+  })
+})
+
+// sempre que o usuário trocar o caça
+watch(selectedFlight, (newFlightId) => {
+  if (connected.value) {
+    listenToFlight(newFlightId)
   }
 })
 
 onUnmounted(() => {
-  if (socket) socket.close()
+  socket.disconnect()
 })
 </script>
