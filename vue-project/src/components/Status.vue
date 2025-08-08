@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div>
     <h2>Status em tempo real</h2>
 
@@ -34,25 +34,20 @@ const data = reactive({
   temperature: 0,
 })
 
-const socket = io('http://localhost:3000')
-
-let currentListener = ''
-
-const listenToFlight = (flightId) => {
-  // remove listener anterior
-  if (currentListener) {
-    socket.off(currentListener)
-  }
-
-  const eventName = `flightData:${flightId}`
-  currentListener = eventName
-
-  socket.on(eventName, (incoming) => {
-    Object.assign(data, incoming)
-  })
-}
 
 onMounted(() => {
+  const token = localStorage.getItem('token')
+  console.log('Token atual:', token)
+
+  if (!token) {
+    console.warn('⚠️ Token não encontrado no localStorage')
+    return
+  }
+
+  socket = io('http://localhost:3000', {
+    auth: { token },
+  })
+
   socket.on('connect', () => {
     connected.value = true
     console.log('🟢 Conectado ao servidor')
@@ -65,7 +60,6 @@ onMounted(() => {
   })
 })
 
-// sempre que o usuário trocar o caça
 watch(selectedFlight, (newFlightId) => {
   if (connected.value) {
     listenToFlight(newFlightId)
@@ -73,6 +67,8 @@ watch(selectedFlight, (newFlightId) => {
 })
 
 onUnmounted(() => {
-  socket.disconnect()
+  if (socket) {
+    socket.disconnect()
+  }
 })
-</script>
+</script> -->

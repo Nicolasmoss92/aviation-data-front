@@ -1,12 +1,12 @@
 // src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router'
-import Status from '@/components/Status.vue'
+import Dashboard from '../views/Dashboard.vue'
 
 const routes = [
   {
-    path: '/status',
-    name: 'Status',
-    component: Status
+    path: '/dashboard',
+    name: 'Dashboard',
+    component: Dashboard
   },
 ]
 
